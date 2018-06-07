@@ -23,8 +23,9 @@ public class SplashActivity extends Activity {
         }
         setContentView(R.layout.activity_splash);
 
-        if(!NetworkHelper.isConnect(this)){
-            Toast.makeText(this, "Desculpe, mas parece que seu smartphone esta desconectado da internet!", Toast.LENGTH_LONG).show(); ;
+        if (!NetworkHelper.isConnect(this)) {
+            Toast.makeText(this, "Desculpe, mas parece que seu smartphone esta desconectado da internet!", Toast.LENGTH_LONG).show();
+            ;
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -33,13 +34,13 @@ public class SplashActivity extends Activity {
                 }
             }, 3000);
 
-            return ;
+            return;
         } else {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     loginFinal();
-    //                MTools.vibra(Splash.this);
+                    //                MTools.vibra(Splash.this);
                 }
             }, SPLASH_DISPLAY_LENGTH);
 
@@ -49,7 +50,6 @@ public class SplashActivity extends Activity {
 
 
     private void loginFinal() {
-
         Intent maindItent = new Intent(SplashActivity.this, MainActivity.class);
         SplashActivity.this.startActivity(maindItent);
         SplashActivity.this.finish();

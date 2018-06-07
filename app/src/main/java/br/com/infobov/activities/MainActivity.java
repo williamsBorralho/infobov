@@ -3,6 +3,7 @@ package br.com.infobov.activities;
 import android.app.Activity;
 import android.content.Context;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -61,7 +62,7 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         OnMapReadyCallback,
         DialogFragmentFiltroMapa.OnFragmentInteractionListener, EstadoOnClickEventListView.EstadoOnClickItem {
-
+    private View progressBar;
     private Gson gson;
     private Retrofit retrofit;
     private Context context = this;
@@ -81,7 +82,6 @@ public class MainActivity extends AppCompatActivity
     private ImageView imvSatelite;
     private ImageView imvPadrao;
 
-
     //Filtros
     private Estado estadoSelected;
     private String tipoFiltro;
@@ -90,6 +90,8 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        progressBar = findViewById(R.id.progressbar_view);
+
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -115,25 +117,18 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
                 if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
-//                    Toast.makeText(context, "Minimizado", Toast.LENGTH_SHORT).show();
-//                    tapactionlayout.setVisibility(View.VISIBLE);
                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.hideSoftInputFromWindow(editTextPalavraChave.getWindowToken(), 0);
                 }
                 if (newState == BottomSheetBehavior.STATE_EXPANDED) {
-                    //                    Toast.makeText(context, "Maximizado", Toast.LENGTH_SHORT).show();
-                    //                    tapactionlayout.setVisibility(View.GONE);
                 }
 
                 if (newState == BottomSheetBehavior.STATE_DRAGGING) {
-                    //                    Toast.makeText(context, "Arrastado", Toast.LENGTH_SHORT).show();
-                    //                    tapactionlayout.setVisibility(View.GONE);
                 }
             }
 
             @Override
             public void onSlide(@NonNull View bottomSheet, float slideOffset) {
-//                Toast.makeText(context, "Deslizado", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -186,7 +181,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
@@ -196,7 +191,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
@@ -256,10 +250,21 @@ public class MainActivity extends AppCompatActivity
         processaChamadaResposa(retrofit.create(FazendaAPI.class).getAll());
     }
 
+    private void criarMarkersOnMap() {
+        List<MarkerOptions> markerOptions = prepataMarkers();
+        List<Marker> mks = new ArrayList<>();
+        for (MarkerOptions mop : markerOptions) {
+            mks.add(mMap.addMarker(mop));
+        }
+        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(preparaLimites(mks), 300));
+    }
+
     public void filtrarPropriedades() {
         String pChave = editTextPalavraChave.getText().toString();
         TipoFiltro filtro = TipoFiltro.byDescricao(tipoFiltro);
-        processaChamadaResposa(retrofit.create(FazendaAPI.class).getPropByFiltro(new FiltroFazenda(filtro.getCodigo(), pChave)));
+        if (filtro != null) {
+            processaChamadaResposa(retrofit.create(FazendaAPI.class).getPropByFiltro(new FiltroFazenda(filtro.getCodigo(), pChave)));
+        }
     }
 
     private void preparaChamada(Class clazz, Object typeAdapter) {
@@ -272,6 +277,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void processaChamadaResposa(Call<List<Fazenda>> call) {
+
         call.enqueue(new Callback<List<Fazenda>>() {
             @Override
             public void onResponse(Call<List<Fazenda>> call, Response<List<Fazenda>> response) {
@@ -281,13 +287,8 @@ public class MainActivity extends AppCompatActivity
                         mMap.clear();
                         fazendas = new ArrayList<>();
                         fazendas.addAll(resp);
-
-                        List<MarkerOptions> markerOptions = prepataMarkers();
-                        List<Marker> mks = new ArrayList<>();
-                        for (MarkerOptions mop : markerOptions) {
-                            mks.add(mMap.addMarker(mop));
-                        }
-                        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(preparaLimites(mks), 300));
+                        criarMarkersOnMap();
+                        progressBar.setVisibility(View.GONE);
                     } else {
                         Toast.makeText(context, "Nem um resultado encontrado para sua pesquisa.", Toast.LENGTH_LONG).show();
                     }
@@ -336,11 +337,10 @@ public class MainActivity extends AppCompatActivity
 
             }
         });
-
     }
 
-
     private void getEstadoRest(Call<List<Estado>> call) {
+        progressBar.setVisibility(View.VISIBLE);
         call.enqueue(new Callback<List<Estado>>() {
             @Override
             public void onResponse(Call<List<Estado>> call, Response<List<Estado>> response) {
@@ -353,6 +353,7 @@ public class MainActivity extends AppCompatActivity
                         estadoAdapterLv = new EstadoAdapterLv(context, estados);
                         estadoSpinner.setAdapter(estadoAdapterLv);
                         estadoSpinner.setOnItemSelectedListener(new EstadoOnClickEventListView((Activity) context, estadoAdapterLv));
+                        progressBar.setVisibility(View.VISIBLE);
                     } else {
                         Toast.makeText(context, "Nem um resultado encontrado para sua pesquisa.", Toast.LENGTH_LONG).show();
                     }
@@ -379,5 +380,36 @@ public class MainActivity extends AppCompatActivity
             mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
         }
     };
+
+
+    class TaskAllPropriedades extends AsyncTask<String, Integer, Boolean> {
+        @Override
+        protected void onPreExecute() {
+            progressBar.setVisibility(View.VISIBLE);
+//            listView.setVisibility(View.GONE);
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+            progressBar.setVisibility(View.GONE);
+//            listView.setVisibility(View.VISIBLE);
+//            adapter.notifyDataSetChanged();
+            super.onPostExecute(result);
+        }
+
+        @Override
+        protected Boolean doInBackground(String... params) {
+            Log.d("MAP", "Carregando Mapa ");
+
+            try {
+                Thread.sleep(10000);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
+
 
 }
