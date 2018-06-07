@@ -22,6 +22,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -71,12 +72,15 @@ public class MainActivity extends AppCompatActivity
     private BottomNavigationView navBottom;
     private AlertDialog.Builder dialogFiltro;
     private BottomSheetBehavior mBottomSheetBehavior;
-    View bottomFiltro;
+    private View bottomFiltro;
     private EditText editTextPalavraChave;
     private Button btnFiltrar;
     private EstadoAdapterLv mEstadoAdapterLv;
     private Spinner estadoSpinner, spinnerTipoFiltro;
     private EstadoAdapterLv estadoAdapterLv;
+    private ImageView imvSatelite;
+    private ImageView imvPadrao;
+
 
     //Filtros
     private Estado estadoSelected;
@@ -168,6 +172,13 @@ public class MainActivity extends AppCompatActivity
                 mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             }
         });
+
+        imvPadrao = findViewById(R.id.padrao);
+        imvSatelite = findViewById(R.id.satelite);
+
+        imvPadrao.setOnClickListener(alterarTipoMapa);
+        imvSatelite.setOnClickListener(alterarTipoMapa);
+
         initListViewEstados();
         initTipoFiltro();
 
@@ -247,7 +258,7 @@ public class MainActivity extends AppCompatActivity
 
     public void filtrarPropriedades() {
         String pChave = editTextPalavraChave.getText().toString();
-        TipoFiltro filtro = TipoFiltro.byDescricao(tipoFiltro) ;
+        TipoFiltro filtro = TipoFiltro.byDescricao(tipoFiltro);
         processaChamadaResposa(retrofit.create(FazendaAPI.class).getPropByFiltro(new FiltroFazenda(filtro.getCodigo(), pChave)));
     }
 
@@ -299,7 +310,6 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void getEstadoOnList(Estado e) {
         this.estadoSelected = e;
-        Toast.makeText(context, " >>> " + this.estadoSelected.getUf(), Toast.LENGTH_SHORT).show();
     }
 
     public void initListViewEstados() {
@@ -319,7 +329,6 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 tipoFiltro = (String) parent.getItemAtPosition(position);
-                Toast.makeText(context, " Posição " + tipoFiltro, Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -329,6 +338,7 @@ public class MainActivity extends AppCompatActivity
         });
 
     }
+
 
     private void getEstadoRest(Call<List<Estado>> call) {
         call.enqueue(new Callback<List<Estado>>() {
@@ -356,5 +366,18 @@ public class MainActivity extends AppCompatActivity
             }
         });
     }
+
+
+    private View.OnClickListener alterarTipoMapa = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (v.getId() == R.id.satelite) {
+                mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+            } else if (v.getId() == R.id.padrao) {
+                mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+            }
+            mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        }
+    };
 
 }
