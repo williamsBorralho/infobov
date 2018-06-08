@@ -6,13 +6,15 @@ public class FiltroFazenda implements Serializable {
 
     private Integer tipoFiltro;
     private String palavraChave;
+    private String uf;
 
     public FiltroFazenda() {
     }
 
-    public FiltroFazenda(Integer tipoFiltro, String palavraChave) {
+    public FiltroFazenda(Integer tipoFiltro, String palavraChave , String uf) {
         this.tipoFiltro = tipoFiltro;
         this.palavraChave = palavraChave;
+        this.uf = uf ;
     }
 
     public Integer getTipoFiltro() {
@@ -29,5 +31,13 @@ public class FiltroFazenda implements Serializable {
 
     public void setPalavraChave(String palavraChave) {
         this.palavraChave = palavraChave;
+    }
+
+    public String getUf() {
+        return uf;
+    }
+
+    public void setUf(String uf) {
+        this.uf = uf;
     }
 }

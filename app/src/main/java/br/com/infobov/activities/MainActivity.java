@@ -2,9 +2,12 @@ package br.com.infobov.activities;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.BottomSheetBehavior;
@@ -90,6 +93,8 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        validaConecoes();
         progressBar = findViewById(R.id.progressbar_view);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -213,11 +218,12 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.nav_manage) {
-        } else if (id == R.id.nav_share) {
+//        if (id == R.id.nav_manage) {
+//        } else
+        if (id == R.id.nav_share) {
         } else if (id == R.id.nav_send) {
         }
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -226,6 +232,31 @@ public class MainActivity extends AppCompatActivity
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         restAllProp();
+    }
+
+    private void validaConecoes() {
+        if (!NetworkHelper.isConnect(this)) {
+            AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+            alertDialog.setTitle("Alert");
+            alertDialog.setMessage("Você precisa ativar sua conexação com a internet!");
+            alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ativar",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                            Intent i = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
+                            startActivity(i);
+                        }
+                    });
+            alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancelar",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            finish();
+                        }
+                    });
+            alertDialog.show();
+
+            return;
+        }
     }
 
     private LatLngBounds preparaLimites(List<Marker> mks) {
@@ -262,9 +293,8 @@ public class MainActivity extends AppCompatActivity
     public void filtrarPropriedades() {
         String pChave = editTextPalavraChave.getText().toString();
         TipoFiltro filtro = TipoFiltro.byDescricao(tipoFiltro);
-        if (filtro != null) {
-            processaChamadaResposa(retrofit.create(FazendaAPI.class).getPropByFiltro(new FiltroFazenda(filtro.getCodigo(), pChave)));
-        }
+        String uf = estadoSelected != null ? estadoSelected.getUf() : "";
+        processaChamadaResposa(retrofit.create(FazendaAPI.class).getPropByFiltro(new FiltroFazenda((filtro == null ? 0 : filtro.getCodigo()), pChave, uf)));
     }
 
     private void preparaChamada(Class clazz, Object typeAdapter) {
@@ -319,8 +349,6 @@ public class MainActivity extends AppCompatActivity
 
         preparaChamada(Estado.class, new EstadoDeserializer());
         getEstadoRest(retrofit.create(FazendaAPI.class).getAllEstados());
-
-
     }
 
 
@@ -330,6 +358,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 tipoFiltro = (String) parent.getItemAtPosition(position);
+                editTextPalavraChave.setHint(tipoFiltro.startsWith("Filtrar") ? "Todas" : tipoFiltro);
             }
 
             @Override

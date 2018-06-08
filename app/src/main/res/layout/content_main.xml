@@ -13,6 +13,11 @@
 
     <include layout="@layout/activity_all_prop_maps" />
 
+
+
+    <include layout="@layout/scrolling_activity_filtro" />
+
+
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/progressbar_view"
         android:layout_width="match_parent"
@@ -40,8 +45,6 @@
         </android.support.constraint.ConstraintLayout>
 
     </LinearLayout>
-
-    <include layout="@layout/scrolling_activity_filtro" />
 
 
     <android.support.design.widget.BottomNavigationView
