@@ -123,36 +123,14 @@ public class MainActivity extends AppCompatActivity
         mBottomSheetBehavior = BottomSheetBehavior.from(bottomFiltro);
         mBottomSheetBehavior.setPeekHeight(120);
         mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-        mBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
-            @Override
-            public void onStateChanged(@NonNull View bottomSheet, int newState) {
-                if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
-                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(mEdtxtPalavraChave.getWindowToken(), 0);
-                }
-                if (newState == BottomSheetBehavior.STATE_EXPANDED) {
-                }
-
-                if (newState == BottomSheetBehavior.STATE_DRAGGING) {
-                }
-            }
-
-            @Override
-            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
-            }
-        });
+        mBottomSheetBehavior.setBottomSheetCallback(bottomSheetCallback);
 
         navBottom = findViewById(R.id.navigation);
         navBottom.setOnNavigationItemSelectedListener(onClickMenuBottomBar);
 
         mEdtxtPalavraChave = findViewById(R.id.palavra_chave);
         btnFiltrar = findViewById(R.id.filtrar);
-        btnFiltrar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                filtrarPropriedades();
-            }
-        });
+        btnFiltrar.setOnClickListener(filtrarPropriedadeOnClickListener);
 
         imvPadrao = findViewById(R.id.padrao);
         imvSatelite = findViewById(R.id.satelite);
@@ -390,6 +368,32 @@ public class MainActivity extends AppCompatActivity
             return false;
         }
     };
+
+    private View.OnClickListener filtrarPropriedadeOnClickListener =  new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            filtrarPropriedades();
+        }
+    } ;
+
+    private BottomSheetBehavior.BottomSheetCallback bottomSheetCallback   = new BottomSheetBehavior.BottomSheetCallback() {
+        @Override
+        public void onStateChanged(@NonNull View bottomSheet, int newState) {
+            if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(mEdtxtPalavraChave.getWindowToken(), 0);
+            }
+            if (newState == BottomSheetBehavior.STATE_EXPANDED) {
+            }
+
+            if (newState == BottomSheetBehavior.STATE_DRAGGING) {
+            }
+        }
+
+        @Override
+        public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+        }
+    } ;
 
 
     class TaskAllPropriedades extends AsyncTask<String, Integer, Boolean> {

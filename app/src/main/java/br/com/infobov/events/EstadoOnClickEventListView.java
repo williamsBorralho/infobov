@@ -17,6 +17,10 @@ public class EstadoOnClickEventListView implements AdapterView.OnItemSelectedLis
     public EstadoOnClickEventListView(Activity activity  , EstadoAdapterLv estadoAdapterLv) {
         this.activity = (EstadoOnClickItem) activity;
         this.estadoAdapterLv = estadoAdapterLv;
+
+
+
+
     }
 
     @Override

@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import br.com.infobov.activities.ibovmobile.R;
+import br.com.infobov.network.FazendaNetworkUtils;
+import br.com.infobov.network.ProcessGSONRespUtils;
 import br.com.infobov.network.RetrofitFactory;
 import br.com.infobov.sync.api.EstadoDeserializer;
 import br.com.infobov.sync.api.FazendaDeserializer;
@@ -24,13 +26,13 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class SplashActivity extends Activity {
+public class SplashActivity extends Activity implements FazendaNetworkUtils.OnBeforeResult  {
 
-    public static final String FAZENDAS = "FAZENDAS" ;
-    public static final String ESTADOS = "ESTADOS" ;
+    public static final String FAZENDAS = "FAZENDAS";
+    public static final String ESTADOS = "ESTADOS";
 
     private final int SPLASH_DISPLAY_LENGTH = 2000;
-    private RetrofitFactory retrofitFactory ;
+    private RetrofitFactory retrofitFactory;
     private List<Fazenda> fazendas;
     private List<Estado> estados;
 
@@ -50,38 +52,15 @@ public class SplashActivity extends Activity {
     private void preparaEstados() {
         retrofitFactory = new RetrofitFactory();
         retrofitFactory.builCall(Estado.class, new EstadoDeserializer());
-        processRestEstados(retrofitFactory.getRetrofit().create(RestAPI.class).getAllEstados());
+        new ProcessGSONRespUtils<Estado>("ESTADO" , getBaseContext() , this , this.estados)
+        .processData(retrofitFactory.getRetrofit().create(RestAPI.class).getAllEstados());
     }
 
     private void preparaFazendas() {
         retrofitFactory = new RetrofitFactory();
         retrofitFactory.builCall(Fazenda.class, new FazendaDeserializer());
-        processRestFazendas(retrofitFactory.getRetrofit().create(RestAPI.class).getAll());
-    }
-
-    private void processRestFazendas(Call<List<Fazenda>> call) {
-        call.enqueue(new Callback<List<Fazenda>>() {
-            @Override
-            public void onResponse(Call<List<Fazenda>> call, Response<List<Fazenda>> response) {
-                if (response.body() != null) {
-                    List<Fazenda> resp = response.body();
-                    if (resp != null && resp.size() > 0) {
-                        fazendas = new ArrayList<>();
-                        fazendas.addAll(resp);
-                        preparaEstados();
-                    } else {
-                        Toast.makeText(getBaseContext(), "Nem um resultado encontrado para sua pesquisa.", Toast.LENGTH_LONG).show();
-                    }
-                } else {
-                    Toast.makeText(getBaseContext(), "Erro >>> ", Toast.LENGTH_LONG).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Fazenda>> call, Throwable t) {
-                Log.i("IB_ERROR", t.getMessage());
-            }
-        });
+        new FazendaNetworkUtils(getBaseContext(), this, this.fazendas)
+                .processRestFazendas(retrofitFactory.getRetrofit().create(RestAPI.class).getAll());
     }
 
     private void processRestEstados(Call<List<Estado>> call) {
@@ -116,9 +95,18 @@ public class SplashActivity extends Activity {
 
     private void goPrincipal() {
         Intent maindItent = new Intent(SplashActivity.this, MainActivity.class);
-        maindItent.putExtra(FAZENDAS , (Serializable) this.fazendas) ;
-        maindItent.putExtra(ESTADOS , (Serializable) this.estados) ;
+        maindItent.putExtra(FAZENDAS, (Serializable) this.fazendas);
+        maindItent.putExtra(ESTADOS, (Serializable) this.estados);
         SplashActivity.this.startActivity(maindItent);
         SplashActivity.this.finish();
     }
+
+    @Override
+    public void before() {
+        preparaEstados();
+
+    }
+
+
+
 }
