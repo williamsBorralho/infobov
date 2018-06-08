@@ -42,16 +42,16 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import br.com.infobov.activities.ibovmobile.R;
 import br.com.infobov.adapters.EstadoAdapterLv;
 import br.com.infobov.events.EstadoOnClickEventListView;
 import br.com.infobov.network.NetworkHelper;
-import br.com.infobov.sync.api.EstadoDeserializer;
-import br.com.infobov.sync.api.RestAPI;
 import br.com.infobov.sync.api.FazendaDeserializer;
 import br.com.infobov.sync.api.FiltroFazenda;
+import br.com.infobov.sync.api.RestAPI;
 import br.com.infobov.sync.api.TipoFiltro;
 import br.com.infobov.sync.domain.Estado;
 import br.com.infobov.sync.domain.Fazenda;
@@ -65,6 +65,7 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         OnMapReadyCallback,
         DialogFragmentFiltroMapa.OnFragmentInteractionListener, EstadoOnClickEventListView.EstadoOnClickItem {
+
     private View progressBar;
     private Gson gson;
     private Retrofit retrofit;
@@ -93,8 +94,12 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        fazendas = (List<Fazenda>) getIntent().getSerializableExtra(SplashActivity.FAZENDAS);
+        estados = new ArrayList<>();
+        estados.add(new Estado("Estado", ""));
+        estados.addAll((Collection<? extends Estado>) getIntent().getSerializableExtra(SplashActivity.ESTADOS));
 
-        validaConecoes();
+        validaConexoes();
         progressBar = findViewById(R.id.progressbar_view);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -155,7 +160,7 @@ public class MainActivity extends AppCompatActivity
         imvPadrao.setOnClickListener(alterarTipoMapa);
         imvSatelite.setOnClickListener(alterarTipoMapa);
 
-        initListViewEstados();
+        initSpinnerEstados();
         initTipoFiltro();
 
     }
@@ -210,7 +215,7 @@ public class MainActivity extends AppCompatActivity
         restAllProp();
     }
 
-    private void validaConecoes() {
+    private void validaConexoes() {
         if (!NetworkHelper.isConnect(this)) {
             AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
             alertDialog.setTitle("Alert");
@@ -307,7 +312,6 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onFailure(Call<List<Fazenda>> call, Throwable t) {
                 Log.i("ERRO", t.getMessage());
-
             }
         });
     }
@@ -321,14 +325,12 @@ public class MainActivity extends AppCompatActivity
         this.estadoSelected = e;
     }
 
-    public void initListViewEstados() {
-        estados = new ArrayList<>();
-        estados.add(new Estado("Estado", ""));
-
-        preparaChamada(Estado.class, new EstadoDeserializer());
-        getEstadoRest(retrofit.create(RestAPI.class).getAllEstados());
+    public void initSpinnerEstados() {
+        spinnerEstados = findViewById(R.id.spinner_estados);
+        estadoAdapterLv = new EstadoAdapterLv(context, estados);
+        spinnerEstados.setAdapter(estadoAdapterLv);
+        spinnerEstados.setOnItemSelectedListener(new EstadoOnClickEventListView((Activity) context, estadoAdapterLv));
     }
-
 
     public void initTipoFiltro() {
         spinnerTipoFiltro = findViewById(R.id.spinner_tipo_filtro);
@@ -342,34 +344,6 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
 
-            }
-        });
-    }
-
-    private void getEstadoRest(Call<List<Estado>> call) {
-        progressBar.setVisibility(View.VISIBLE);
-        call.enqueue(new Callback<List<Estado>>() {
-            @Override
-            public void onResponse(Call<List<Estado>> call, Response<List<Estado>> response) {
-                if (response.body() != null) {
-                    List<Estado> resp = response.body();
-                    if (resp != null && resp.size() > 0) {
-                        estados.addAll(resp);
-                        spinnerEstados = findViewById(R.id.spinner_estados);
-                        spinnerMunicipios = findViewById(R.id.spinner_municipios);
-                        estadoAdapterLv = new EstadoAdapterLv(context, estados);
-                        spinnerEstados.setAdapter(estadoAdapterLv);
-                        spinnerEstados.setOnItemSelectedListener(new EstadoOnClickEventListView((Activity) context, estadoAdapterLv));
-                        progressBar.setVisibility(View.VISIBLE);
-                    } else {
-                        Toast.makeText(context, "Nem um resultado encontrado para sua pesquisa.", Toast.LENGTH_LONG).show();
-                    }
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Estado>> call, Throwable t) {
-                Log.i("ERRO", t.getMessage());
             }
         });
     }
@@ -389,8 +363,9 @@ public class MainActivity extends AppCompatActivity
                 } else if (mBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
                     spinnerTipoFiltro.setSelection(0);
                     spinnerEstados.setSelection(0);
-                    spinnerMunicipios.setSelection(0);
                     mEdtxtPalavraChave.setHint("Todas");
+                    mEdtxtPalavraChave.setText("");
+//                    spinnerMunicipios.setSelection(0);
                 }
                 break;
         }
