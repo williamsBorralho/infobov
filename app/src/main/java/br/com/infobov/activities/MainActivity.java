@@ -49,7 +49,7 @@ import br.com.infobov.adapters.EstadoAdapterLv;
 import br.com.infobov.events.EstadoOnClickEventListView;
 import br.com.infobov.network.NetworkHelper;
 import br.com.infobov.sync.api.EstadoDeserializer;
-import br.com.infobov.sync.api.FazendaAPI;
+import br.com.infobov.sync.api.RestAPI;
 import br.com.infobov.sync.api.FazendaDeserializer;
 import br.com.infobov.sync.api.FiltroFazenda;
 import br.com.infobov.sync.api.TipoFiltro;
@@ -77,10 +77,10 @@ public class MainActivity extends AppCompatActivity
     private AlertDialog.Builder dialogFiltro;
     private BottomSheetBehavior mBottomSheetBehavior;
     private View bottomFiltro;
-    private EditText editTextPalavraChave;
+    private EditText mEdtxtPalavraChave;
     private Button btnFiltrar;
     private EstadoAdapterLv mEstadoAdapterLv;
-    private Spinner estadoSpinner, spinnerTipoFiltro;
+    private Spinner spinnerEstados, spinnerMunicipios, spinnerTipoFiltro;
     private EstadoAdapterLv estadoAdapterLv;
     private ImageView imvSatelite;
     private ImageView imvPadrao;
@@ -123,7 +123,7 @@ public class MainActivity extends AppCompatActivity
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
                 if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(editTextPalavraChave.getWindowToken(), 0);
+                    imm.hideSoftInputFromWindow(mEdtxtPalavraChave.getWindowToken(), 0);
                 }
                 if (newState == BottomSheetBehavior.STATE_EXPANDED) {
                 }
@@ -138,38 +138,14 @@ public class MainActivity extends AppCompatActivity
         });
 
         navBottom = findViewById(R.id.navigation);
-        navBottom.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                switch (item.getItemId()) {
-                    case R.id.action_item1:
-                        if (mBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
-                            mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
-                        } else {
-                            mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-                        }
-//                        DialogFragment filtro =  new DialogFragmentFiltroMapa();
-//                        filtro.show(getSupportFragmentManager(), "FiltroMapa") ;
-                        break;
-//                    case R.id.action_item2:
-//                        Toast.makeText(context, "Toas 2", Toast.LENGTH_SHORT).show();
-//                        break;
-//                    case R.id.action_item3:
-//                        Toast.makeText(context, "Toas 3", Toast.LENGTH_SHORT).show();
-//                        break;
-                }
-                return false;
-            }
-        });
+        navBottom.setOnNavigationItemSelectedListener(onClickMenuBottomBar);
 
-
-        editTextPalavraChave = findViewById(R.id.palavra_chave);
+        mEdtxtPalavraChave = findViewById(R.id.palavra_chave);
         btnFiltrar = findViewById(R.id.filtrar);
         btnFiltrar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 filtrarPropriedades();
-                mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             }
         });
 
@@ -278,7 +254,7 @@ public class MainActivity extends AppCompatActivity
 
     private void restAllProp() {
         preparaChamada(Fazenda.class, new FazendaDeserializer());
-        processaChamadaResposa(retrofit.create(FazendaAPI.class).getAll());
+        processaChamadaResposa(retrofit.create(RestAPI.class).getAll());
     }
 
     private void criarMarkersOnMap() {
@@ -291,10 +267,10 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void filtrarPropriedades() {
-        String pChave = editTextPalavraChave.getText().toString();
+        String pChave = mEdtxtPalavraChave.getText().toString();
         TipoFiltro filtro = TipoFiltro.byDescricao(tipoFiltro);
-        String uf = estadoSelected != null ? estadoSelected.getUf() : "";
-        processaChamadaResposa(retrofit.create(FazendaAPI.class).getPropByFiltro(new FiltroFazenda((filtro == null ? 0 : filtro.getCodigo()), pChave, uf)));
+        String uf = estadoSelected != null ? estadoSelected.getUf().equals("Estado") ? null : estadoSelected.getUf() : null;
+        processaChamadaResposa(retrofit.create(RestAPI.class).getPropByFiltro(new FiltroFazenda((filtro == null ? 0 : filtro.getCodigo()), pChave, uf)));
     }
 
     private void preparaChamada(Class clazz, Object typeAdapter) {
@@ -322,7 +298,10 @@ public class MainActivity extends AppCompatActivity
                     } else {
                         Toast.makeText(context, "Nem um resultado encontrado para sua pesquisa.", Toast.LENGTH_LONG).show();
                     }
+                } else {
+                    Toast.makeText(context, "Erro >>> ", Toast.LENGTH_LONG).show();
                 }
+                mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             }
 
             @Override
@@ -332,7 +311,6 @@ public class MainActivity extends AppCompatActivity
             }
         });
     }
-
 
     @Override
     public void onFragmentInteraction(Uri uri) {
@@ -345,10 +323,10 @@ public class MainActivity extends AppCompatActivity
 
     public void initListViewEstados() {
         estados = new ArrayList<>();
-        estados.add(new Estado("Qual Estádo?", ""));
+        estados.add(new Estado("Estado", ""));
 
         preparaChamada(Estado.class, new EstadoDeserializer());
-        getEstadoRest(retrofit.create(FazendaAPI.class).getAllEstados());
+        getEstadoRest(retrofit.create(RestAPI.class).getAllEstados());
     }
 
 
@@ -358,7 +336,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 tipoFiltro = (String) parent.getItemAtPosition(position);
-                editTextPalavraChave.setHint(tipoFiltro.startsWith("Filtrar") ? "Todas" : tipoFiltro);
+                mEdtxtPalavraChave.setHint(tipoFiltro.startsWith("Filtrar") ? "Todas" : tipoFiltro);
             }
 
             @Override
@@ -377,11 +355,11 @@ public class MainActivity extends AppCompatActivity
                     List<Estado> resp = response.body();
                     if (resp != null && resp.size() > 0) {
                         estados.addAll(resp);
-                        estadoSpinner = findViewById(R.id.spinner_estados);
-                        estadoSpinner.setPrompt("Selecione o Estado");
+                        spinnerEstados = findViewById(R.id.spinner_estados);
+                        spinnerMunicipios = findViewById(R.id.spinner_municipios);
                         estadoAdapterLv = new EstadoAdapterLv(context, estados);
-                        estadoSpinner.setAdapter(estadoAdapterLv);
-                        estadoSpinner.setOnItemSelectedListener(new EstadoOnClickEventListView((Activity) context, estadoAdapterLv));
+                        spinnerEstados.setAdapter(estadoAdapterLv);
+                        spinnerEstados.setOnItemSelectedListener(new EstadoOnClickEventListView((Activity) context, estadoAdapterLv));
                         progressBar.setVisibility(View.VISIBLE);
                     } else {
                         Toast.makeText(context, "Nem um resultado encontrado para sua pesquisa.", Toast.LENGTH_LONG).show();
@@ -392,11 +370,31 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onFailure(Call<List<Estado>> call, Throwable t) {
                 Log.i("ERRO", t.getMessage());
-
             }
         });
     }
 
+    private void processaOnClickBottomBar(int id) {
+        switch (id) {
+            case R.id.action_item1:
+                if (mBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
+                    mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                } else {
+                    mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+                }
+                break;
+            case R.id.action_item3:
+                if (mBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
+                    restAllProp();
+                } else if (mBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
+                    spinnerTipoFiltro.setSelection(0);
+                    spinnerEstados.setSelection(0);
+                    spinnerMunicipios.setSelection(0);
+                    mEdtxtPalavraChave.setHint("Todas");
+                }
+                break;
+        }
+    }
 
     private View.OnClickListener alterarTipoMapa = new View.OnClickListener() {
         @Override
@@ -407,6 +405,14 @@ public class MainActivity extends AppCompatActivity
                 mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
             }
             mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        }
+    };
+
+    private BottomNavigationView.OnNavigationItemSelectedListener onClickMenuBottomBar = new BottomNavigationView.OnNavigationItemSelectedListener() {
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            processaOnClickBottomBar(item.getItemId());
+            return false;
         }
     };
 

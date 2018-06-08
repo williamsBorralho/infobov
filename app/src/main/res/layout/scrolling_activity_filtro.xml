@@ -28,6 +28,22 @@
                 android:orientation="vertical">
 
                 <Spinner
+                    android:id="@+id/spinner_estados"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp"
+                    android:prompt="@string/label_filtro_estado" />
+
+                <Spinner
+                    android:id="@+id/spinner_municipios"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp"
+                    android:prompt="@string/label_filtro_municipio" />
+
+                <Spinner
                     android:id="@+id/spinner_tipo_filtro"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -36,13 +52,7 @@
                     android:entries="@array/tipo_filtro"
                     android:prompt="@string/label_tipo_filtro" />
 
-                <Spinner
-                    android:id="@+id/spinner_estados"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="10dp"
-                    android:layout_marginTop="10dp"
-                    android:prompt="@string/label_filtro_estado" />
+
 
                 <!-- TextView
                     android:textColor="@android:color/black"

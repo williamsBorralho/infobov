@@ -11,28 +11,29 @@ import java.util.List;
 
 import br.com.infobov.activities.ibovmobile.R;
 import br.com.infobov.sync.domain.Estado;
+import br.com.infobov.sync.domain.Municipio;
 
-public class EstadoAdapterLv extends BaseAdapter {
+public class MunicipioAdapterLv extends BaseAdapter {
 
     Context context;
-    List<Estado> estados;
+    List<Municipio> municipios;
 
-    public EstadoAdapterLv() {
+    public MunicipioAdapterLv() {
     }
 
-    public EstadoAdapterLv(Context context, List<Estado> estados) {
+    public MunicipioAdapterLv(Context context, List<Municipio> estados) {
         this.context = context;
-        this.estados = estados;
+        this.municipios = estados;
     }
 
     @Override
     public int getCount() {
-        return this.estados.size();
+        return this.municipios.size();
     }
 
     @Override
     public Object getItem(int position) {
-        return this.estados.get(position);
+        return this.municipios.get(position);
     }
 
     @Override
@@ -42,13 +43,13 @@ public class EstadoAdapterLv extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        Estado estado = (Estado) getItem(position);
+        Municipio municipio = (Municipio) getItem(position);
         View linha  = LayoutInflater.from(this.context).inflate(R.layout.activity_estado_lv, null) ;
         TextView tvUf = linha.findViewById(R.id.uf) ;
         TextView tvNome  = linha.findViewById(R.id.nome) ;
 
-        tvUf.setText(estado.getUf());
-        tvNome.setText(estado.getNome());
+        tvUf.setText(municipio.getUf());
+        tvNome.setText(municipio.getNome());
         return linha;
     }
 

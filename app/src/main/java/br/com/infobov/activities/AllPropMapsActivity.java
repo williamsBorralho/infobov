@@ -13,11 +13,10 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import br.com.infobov.activities.ibovmobile.R;
-import br.com.infobov.sync.api.FazendaAPI;
+import br.com.infobov.sync.api.RestAPI;
 import br.com.infobov.sync.api.FazendaDeserializer;
 import br.com.infobov.sync.domain.Fazenda;
 import okhttp3.OkHttpClient;
@@ -53,7 +52,7 @@ public class AllPropMapsActivity extends FragmentActivity implements OnMapReadyC
                 .client(okHttpClient)
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .build() ;
-        FazendaAPI fazendaAPI =  retrofit.create(FazendaAPI.class);
+        RestAPI fazendaAPI =  retrofit.create(RestAPI.class);
         Call<Fazenda> call = fazendaAPI.getFazenda(3);
         call.enqueue(new Callback<Fazenda>() {
             @Override

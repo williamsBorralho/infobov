@@ -8,11 +8,11 @@
    <!-- <item
         android:id="@+id/action_item2"
         android:icon="@drawable/ic_action_notificacoes"
-        android:title="@string/item_2"/>
+        android:title="@string/item_2"/ -->
 
     <item
         android:id="@+id/action_item3"
         android:icon="@drawable/ic_action_atualizar"
-        android:title="@string/item_3"/>-->
+        android:title="@string/item_3"/>
 
 </menu>
