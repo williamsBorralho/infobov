@@ -4,17 +4,13 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.util.Log;
 import android.view.WindowManager;
-import android.widget.Toast;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import br.com.infobov.activities.ibovmobile.R;
-import br.com.infobov.network.FazendaNetworkUtils;
 import br.com.infobov.network.ProcessGSONRespUtils;
 import br.com.infobov.network.RetrofitFactory;
 import br.com.infobov.sync.api.EstadoDeserializer;
@@ -22,11 +18,8 @@ import br.com.infobov.sync.api.FazendaDeserializer;
 import br.com.infobov.sync.api.RestAPI;
 import br.com.infobov.sync.domain.Estado;
 import br.com.infobov.sync.domain.Fazenda;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
-public class SplashActivity extends Activity implements FazendaNetworkUtils.OnBeforeResult  {
+public class SplashActivity extends Activity implements ProcessGSONRespUtils.ProcessGSONEvents {
 
     public static final String FAZENDAS = "FAZENDAS";
     public static final String ESTADOS = "ESTADOS";
@@ -52,45 +45,16 @@ public class SplashActivity extends Activity implements FazendaNetworkUtils.OnBe
     private void preparaEstados() {
         retrofitFactory = new RetrofitFactory();
         retrofitFactory.builCall(Estado.class, new EstadoDeserializer());
-        new ProcessGSONRespUtils<Estado>("ESTADO" , getBaseContext() , this , this.estados)
-        .processData(retrofitFactory.getRetrofit().create(RestAPI.class).getAllEstados());
+        new ProcessGSONRespUtils<Estado>("ESTADO", getBaseContext(), this, this.estados = new ArrayList<>())
+                .processData(retrofitFactory.getRetrofit().create(RestAPI.class).getAllEstados());
     }
 
     private void preparaFazendas() {
         retrofitFactory = new RetrofitFactory();
         retrofitFactory.builCall(Fazenda.class, new FazendaDeserializer());
-        new FazendaNetworkUtils(getBaseContext(), this, this.fazendas)
-                .processRestFazendas(retrofitFactory.getRetrofit().create(RestAPI.class).getAll());
-    }
+        new ProcessGSONRespUtils<Fazenda>("FAZENDA", getBaseContext(), this, this.fazendas = new ArrayList<>())
+                .processData(retrofitFactory.getRetrofit().create(RestAPI.class).getAll());
 
-    private void processRestEstados(Call<List<Estado>> call) {
-        call.enqueue(new Callback<List<Estado>>() {
-            @Override
-            public void onResponse(Call<List<Estado>> call, Response<List<Estado>> response) {
-                if (response.body() != null) {
-                    List<Estado> resp = response.body();
-                    if (resp != null && resp.size() > 0) {
-                        estados = new ArrayList<>();
-                        estados.addAll(resp);
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                goPrincipal();
-                            }
-                        }, SPLASH_DISPLAY_LENGTH);
-                    } else {
-                        Toast.makeText(getBaseContext(), "Nem estado foi encontrado na base de dadsos!", Toast.LENGTH_LONG).show();
-                    }
-                } else {
-                    Toast.makeText(getBaseContext(), "Erro >>> ", Toast.LENGTH_LONG).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Estado>> call, Throwable t) {
-                Log.i("IB_ERROR", t.getMessage());
-            }
-        });
     }
 
     private void goPrincipal() {
@@ -102,11 +66,25 @@ public class SplashActivity extends Activity implements FazendaNetworkUtils.OnBe
     }
 
     @Override
-    public void before() {
-        preparaEstados();
+    public void after(String tag, ProcessGSONRespUtils process) {
+        List data = process.getData();
+        if (tag.equals("FAZENDA")) {
+            preparaEstados();
+            this.fazendas.addAll(data) ;
+        } else if (tag.equals("ESTADO")) {
+            this.estados.addAll(data) ;
+            goPrincipal();
+//            new Handler().postDelayed(new Runnable() {
+//                @Override
+//                public void run() {
+//                }
+//            }, SPLASH_DISPLAY_LENGTH);
+        }
 
     }
 
+    @Override
+    public void before(String tag, ProcessGSONRespUtils process) {
 
-
+    }
 }

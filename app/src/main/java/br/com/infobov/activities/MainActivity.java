@@ -28,7 +28,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
-import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -39,7 +38,6 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,24 +45,29 @@ import java.util.List;
 
 import br.com.infobov.activities.ibovmobile.R;
 import br.com.infobov.adapters.EstadoAdapterLv;
+import br.com.infobov.adapters.MunicipioAdapterLv;
 import br.com.infobov.events.EstadoOnClickEventListView;
 import br.com.infobov.network.NetworkHelper;
+import br.com.infobov.network.ProcessGSONRespUtils;
+import br.com.infobov.network.RetrofitFactory;
 import br.com.infobov.sync.api.FazendaDeserializer;
 import br.com.infobov.sync.api.FiltroFazenda;
+import br.com.infobov.sync.api.MunicipioDeserializer;
 import br.com.infobov.sync.api.RestAPI;
 import br.com.infobov.sync.api.TipoFiltro;
 import br.com.infobov.sync.domain.Estado;
 import br.com.infobov.sync.domain.Fazenda;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import br.com.infobov.sync.domain.Municipio;
 import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         OnMapReadyCallback,
-        DialogFragmentFiltroMapa.OnFragmentInteractionListener, EstadoOnClickEventListView.EstadoOnClickItem {
+        DialogFragmentFiltroMapa.OnFragmentInteractionListener, EstadoOnClickEventListView.EstadoOnClickItem, ProcessGSONRespUtils.ProcessGSONEvents {
+
+    public static final String FAZENDA = "FAZENDA";
+    public static final String ESTADO = "ESTADO";
+    public static final String MUNICIPIO = "MUNICIPIO";
 
     private View progressBar;
     private Gson gson;
@@ -74,6 +77,7 @@ public class MainActivity extends AppCompatActivity
     private LatLngBounds.Builder builder;
     private List<Fazenda> fazendas;
     private List<Estado> estados;
+    private List<Municipio> municipios;
     private BottomNavigationView navBottom;
     private AlertDialog.Builder dialogFiltro;
     private BottomSheetBehavior mBottomSheetBehavior;
@@ -83,6 +87,7 @@ public class MainActivity extends AppCompatActivity
     private EstadoAdapterLv mEstadoAdapterLv;
     private Spinner spinnerEstados, spinnerMunicipios, spinnerTipoFiltro;
     private EstadoAdapterLv estadoAdapterLv;
+    private MunicipioAdapterLv municipioAdapterLv ;
     private ImageView imvSatelite;
     private ImageView imvPadrao;
 
@@ -104,7 +109,6 @@ public class MainActivity extends AppCompatActivity
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -138,7 +142,7 @@ public class MainActivity extends AppCompatActivity
         imvPadrao.setOnClickListener(alterarTipoMapa);
         imvSatelite.setOnClickListener(alterarTipoMapa);
 
-        initSpinnerEstados();
+        preparatSpinnersEstaMunicipios();
         initTipoFiltro();
 
     }
@@ -189,8 +193,14 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        progressBar.setVisibility(View.GONE);
         mMap = googleMap;
-        restAllProp();
+        mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
+            @Override
+            public void onMapLoaded() {
+                criarMarkersOnMap();
+            }
+        });
     }
 
     private void validaConexoes() {
@@ -236,8 +246,10 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void restAllProp() {
-        preparaChamada(Fazenda.class, new FazendaDeserializer());
-        processaChamadaResposa(retrofit.create(RestAPI.class).getAll());
+        RetrofitFactory retrofitFactory = new RetrofitFactory();
+        retrofitFactory.builCall(Fazenda.class, new FazendaDeserializer());
+        new ProcessGSONRespUtils<Fazenda>("FAZENDA", getBaseContext(), this, this.fazendas = new ArrayList<>())
+                .processData(retrofitFactory.getRetrofit().create(RestAPI.class).getAll());
     }
 
     private void criarMarkersOnMap() {
@@ -253,45 +265,11 @@ public class MainActivity extends AppCompatActivity
         String pChave = mEdtxtPalavraChave.getText().toString();
         TipoFiltro filtro = TipoFiltro.byDescricao(tipoFiltro);
         String uf = estadoSelected != null ? estadoSelected.getUf().equals("Estado") ? null : estadoSelected.getUf() : null;
-        processaChamadaResposa(retrofit.create(RestAPI.class).getPropByFiltro(new FiltroFazenda((filtro == null ? 0 : filtro.getCodigo()), pChave, uf)));
-    }
 
-    private void preparaChamada(Class clazz, Object typeAdapter) {
-        gson = new GsonBuilder().registerTypeAdapter(clazz, typeAdapter).create();
-        retrofit = new Retrofit
-                .Builder()
-                .baseUrl(NetworkHelper.getDomain())
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .build();
-    }
-
-    private void processaChamadaResposa(Call<List<Fazenda>> call) {
-
-        call.enqueue(new Callback<List<Fazenda>>() {
-            @Override
-            public void onResponse(Call<List<Fazenda>> call, Response<List<Fazenda>> response) {
-                if (response.body() != null) {
-                    List<Fazenda> resp = response.body();
-                    if (resp != null && resp.size() > 0) {
-                        mMap.clear();
-                        fazendas = new ArrayList<>();
-                        fazendas.addAll(resp);
-                        criarMarkersOnMap();
-                        progressBar.setVisibility(View.GONE);
-                    } else {
-                        Toast.makeText(context, "Nem um resultado encontrado para sua pesquisa.", Toast.LENGTH_LONG).show();
-                    }
-                } else {
-                    Toast.makeText(context, "Erro >>> ", Toast.LENGTH_LONG).show();
-                }
-                mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-            }
-
-            @Override
-            public void onFailure(Call<List<Fazenda>> call, Throwable t) {
-                Log.i("ERRO", t.getMessage());
-            }
-        });
+        RetrofitFactory retrofitFactory = new RetrofitFactory();
+        retrofitFactory.builCall(Fazenda.class, new FazendaDeserializer());
+        new ProcessGSONRespUtils<Fazenda>("FAZENDA", getBaseContext(), this, this.fazendas = new ArrayList<>())
+                .processData(retrofitFactory.getRetrofit().create(RestAPI.class).getPropByFiltro(new FiltroFazenda((filtro == null ? 0 : filtro.getCodigo()), pChave, uf)));
     }
 
     @Override
@@ -301,10 +279,19 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void getEstadoOnList(Estado e) {
         this.estadoSelected = e;
+        if(!this.estadoSelected.getUf().startsWith("Est")){
+            RetrofitFactory retrofitFactory = new RetrofitFactory();
+            retrofitFactory.builCall(Municipio.class, new MunicipioDeserializer());
+            new ProcessGSONRespUtils<Municipio>(MUNICIPIO, getBaseContext(), this, this.municipios = new ArrayList<>())
+                    .processData(retrofitFactory.getRetrofit().create(RestAPI.class).getAllMunicipiosPorUf(this.estadoSelected.getUf()));
+        }
     }
 
-    public void initSpinnerEstados() {
+    public void preparatSpinnersEstaMunicipios() {
         spinnerEstados = findViewById(R.id.spinner_estados);
+        spinnerMunicipios = findViewById(R.id.spinner_municipios);
+        spinnerMunicipios.setEnabled(false);
+
         estadoAdapterLv = new EstadoAdapterLv(context, estados);
         spinnerEstados.setAdapter(estadoAdapterLv);
         spinnerEstados.setOnItemSelectedListener(new EstadoOnClickEventListView((Activity) context, estadoAdapterLv));
@@ -312,6 +299,7 @@ public class MainActivity extends AppCompatActivity
 
     public void initTipoFiltro() {
         spinnerTipoFiltro = findViewById(R.id.spinner_tipo_filtro);
+        spinnerTipoFiltro.setFocusable(true);
         spinnerTipoFiltro.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -369,14 +357,14 @@ public class MainActivity extends AppCompatActivity
         }
     };
 
-    private View.OnClickListener filtrarPropriedadeOnClickListener =  new View.OnClickListener() {
+    private View.OnClickListener filtrarPropriedadeOnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             filtrarPropriedades();
         }
-    } ;
+    };
 
-    private BottomSheetBehavior.BottomSheetCallback bottomSheetCallback   = new BottomSheetBehavior.BottomSheetCallback() {
+    private BottomSheetBehavior.BottomSheetCallback bottomSheetCallback = new BottomSheetBehavior.BottomSheetCallback() {
         @Override
         public void onStateChanged(@NonNull View bottomSheet, int newState) {
             if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
@@ -393,7 +381,47 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void onSlide(@NonNull View bottomSheet, float slideOffset) {
         }
-    } ;
+    };
+
+    @Override
+    public void after(String tag, ProcessGSONRespUtils process) {
+        boolean estado = tag.equals(FAZENDA) ||tag.equals(ESTADO)  ;
+        if(estado){
+            mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        }
+        if (tag.equals(FAZENDA)) {
+            mMap.clear();
+            this.fazendas = new ArrayList<>();
+            this.fazendas.addAll(process.getData());
+            criarMarkersOnMap();
+        } else if (tag.equals(ESTADO)) {
+
+        } else if (tag.equals(MUNICIPIO)) {
+            spinnerMunicipios.setEnabled(true);
+            this.municipios = process.getData();
+            municipioAdapterLv = new MunicipioAdapterLv(context, municipios);
+            spinnerMunicipios.setAdapter(municipioAdapterLv);
+        }
+
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                progressBar.setVisibility(View.GONE);
+            }
+        });
+
+    }
+
+    @Override
+    public void before(String tag, ProcessGSONRespUtils processGSONRespUtils) {
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                progressBar.setVisibility(View.VISIBLE);
+            }
+        });
+
+    }
 
 
     class TaskAllPropriedades extends AsyncTask<String, Integer, Boolean> {

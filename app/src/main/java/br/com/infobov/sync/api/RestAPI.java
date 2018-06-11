@@ -24,7 +24,7 @@ public interface RestAPI {
     Call<List<Estado>> getAllEstados();
 
     @GET("rest/AllMuniByEst")
-    Call<List<Municipio>> getAllEstados(@Query("uf") String uf);
+    Call<List<Municipio>> getAllMunicipiosPorUf(@Query("uf") String uf);
 
     @POST("rest/FltProp")
     Call<List<Fazenda>> getPropByFiltro(@Body FiltroFazenda filtro);
