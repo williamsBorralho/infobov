@@ -70,8 +70,6 @@ public class MainActivity extends AppCompatActivity
     public static final String MUNICIPIO = "MUNICIPIO";
 
     private View progressBar;
-    private Gson gson;
-    private Retrofit retrofit;
     private Context context = this;
     private GoogleMap mMap;
     private LatLngBounds.Builder builder;
@@ -84,7 +82,6 @@ public class MainActivity extends AppCompatActivity
     private View bottomFiltro;
     private EditText mEdtxtPalavraChave;
     private Button btnFiltrar;
-    private EstadoAdapterLv mEstadoAdapterLv;
     private Spinner spinnerEstados, spinnerMunicipios, spinnerTipoFiltro;
     private EstadoAdapterLv estadoAdapterLv;
     private MunicipioAdapterLv municipioAdapterLv ;
@@ -93,6 +90,7 @@ public class MainActivity extends AppCompatActivity
 
     //Filtros
     private Estado estadoSelected;
+    private Municipio municipioSelected;
     private String tipoFiltro;
 
     @Override
@@ -265,6 +263,7 @@ public class MainActivity extends AppCompatActivity
         String pChave = mEdtxtPalavraChave.getText().toString();
         TipoFiltro filtro = TipoFiltro.byDescricao(tipoFiltro);
         String uf = estadoSelected != null ? estadoSelected.getUf().equals("Estado") ? null : estadoSelected.getUf() : null;
+        String municipio = municipioSelected != null ? municipioSelected.getUf().equals("Munnicipio") ? null : municipioSelected.getUf() : null;
 
         RetrofitFactory retrofitFactory = new RetrofitFactory();
         retrofitFactory.builCall(Fazenda.class, new FazendaDeserializer());
@@ -398,6 +397,8 @@ public class MainActivity extends AppCompatActivity
 
         } else if (tag.equals(MUNICIPIO)) {
             spinnerMunicipios.setEnabled(true);
+            this.municipios =  new ArrayList<>() ;
+            this.municipios.add(new Municipio("Municipio" , "Municipio"));
             this.municipios = process.getData();
             municipioAdapterLv = new MunicipioAdapterLv(context, municipios);
             spinnerMunicipios.setAdapter(municipioAdapterLv);

@@ -18,7 +18,7 @@ import br.com.infobov.exceptions.ConexaoDesativaException;
 public class NetworkHelper {
 
     //Sincronização de dados no sentido servidor para aplicação
-    private static final int index = 1;
+    private static final int index = 0;
     public static final String DOMAIN[] = {
             "http://infobov.com.br",
             "http://192.168.0.12/infobov/",
@@ -60,7 +60,6 @@ public class NetworkHelper {
         } catch (Exception e) {
             return false;
         }
-
     }
 
 }
