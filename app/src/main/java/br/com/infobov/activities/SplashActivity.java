@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.WindowManager;
+import android.widget.ImageView;
+
+import com.bumptech.glide.Glide;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -70,9 +73,9 @@ public class SplashActivity extends Activity implements ProcessGSONRespUtils.Pro
         List data = process.getData();
         if (tag.equals("FAZENDA")) {
             preparaEstados();
-            this.fazendas.addAll(data) ;
+            this.fazendas.addAll(data);
         } else if (tag.equals("ESTADO")) {
-            this.estados.addAll(data) ;
+            this.estados.addAll(data);
             goPrincipal();
 //            new Handler().postDelayed(new Runnable() {
 //                @Override

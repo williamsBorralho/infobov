@@ -18,11 +18,11 @@ import br.com.infobov.exceptions.ConexaoDesativaException;
 public class NetworkHelper {
 
     //Sincronização de dados no sentido servidor para aplicação
-    private static final int index = 0;
+    private static final int index = 1;
     public static final String DOMAIN[] = {
             "http://infobov.com.br",
             "http://192.168.0.12/infobov/",
-            "http://192.168.1.6:8080",
+            "http://192.168.1.4/infobov/",
             "http://192.168.0.7:8080"};
 
     public static final String ALL_FAZENDAS = DOMAIN[index] + "/vaqueiro/wsvaqueiro/SyncSal/request_login";

@@ -14,7 +14,8 @@ public class Fazenda implements Serializable {
     private String caracteresDaMarca;
     private String dicasDaMarca;
     private String observacao;
-    private Proprietario proprietario ;
+    private Proprietario proprietario;
+    private String ferro;
 
 
     public Fazenda() {
@@ -111,5 +112,13 @@ public class Fazenda implements Serializable {
 
     public void setProprietario(Proprietario proprietario) {
         this.proprietario = proprietario;
+    }
+
+    public String getFerro() {
+        return ferro;
+    }
+
+    public void setFerro(String ferro) {
+        this.ferro = ferro;
     }
 }

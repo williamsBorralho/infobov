@@ -10,7 +10,6 @@ import android.widget.TextView;
 import java.util.List;
 
 import br.com.infobov.activities.ibovmobile.R;
-import br.com.infobov.sync.domain.Estado;
 import br.com.infobov.sync.domain.Municipio;
 
 public class MunicipioAdapterLv extends BaseAdapter {
@@ -33,7 +32,10 @@ public class MunicipioAdapterLv extends BaseAdapter {
 
     @Override
     public Object getItem(int position) {
-        return this.municipios.get(position);
+        if (this.municipios != null && this.municipios.size() > 0) {
+            return this.municipios.get(position);
+        }
+        return null;
     }
 
     @Override
@@ -44,9 +46,9 @@ public class MunicipioAdapterLv extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         Municipio municipio = (Municipio) getItem(position);
-        View linha  = LayoutInflater.from(this.context).inflate(R.layout.activity_estado_lv, null) ;
-        TextView tvUf = linha.findViewById(R.id.uf) ;
-        TextView tvNome  = linha.findViewById(R.id.nome) ;
+        View linha = LayoutInflater.from(this.context).inflate(R.layout.activity_estado_lv, null);
+        TextView tvUf = linha.findViewById(R.id.uf);
+        TextView tvNome = linha.findViewById(R.id.nome);
 
         tvUf.setText(municipio.getUf());
         tvNome.setText(municipio.getNome());
